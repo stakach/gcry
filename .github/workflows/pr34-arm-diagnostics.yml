@@ -31,18 +31,14 @@ jobs:
               old='      return if atomic_of(chunk, header)\n      mark_stack_push(header)'
               assert old in source
               file.write_text(source.replace(old,'      mark_stack_push(header)',1))
-            entry=path/'process_spec/diagnostic_all.cr'
-            entry.write_text('\n'.join('require "./'+str(p.relative_to(path/'process_spec'))[:-3]+'"' for p in sorted((path/'process_spec').rglob('*_spec.cr')))+'\n')
-            binary='/tmp/gcry-diagnostic-'+name
-            subprocess.run(['crystal','build','-Dgc_none',*flags,str(entry),'-o',binary,'--error-trace'],check=True)
             env={k:v for k,v in os.environ.items() if not k.startswith('GCRY_')}
             env['GCRY_STW_WATCHDOG_MS']='10000'
             if name=='bitmap':env['GCRY_BITMAP_ALLOC']='1'
             failures=0
-            for trial in range(5):
-              result=subprocess.run(['timeout','-s','KILL','45',binary],capture_output=True,text=True,env=env)
+            for trial in range(10):
+              result=subprocess.run(['timeout','-s','KILL','60','crystal','spec','-Dgc_none',*flags,'process_spec','--error-trace'],capture_output=True,text=True,env=env,cwd=path)
               failures+=result.returncode!=0
               print(json.dumps(dict(variant=name,trial=trial,exit=result.returncode)),flush=True)
               print(result.stdout+result.stderr,flush=True)
-            print(json.dumps(dict(variant=name,failed=failures,trials=5)),flush=True)
+            print(json.dumps(dict(variant=name,failed=failures,trials=10)),flush=True)
           PY

@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches-ignore: [pr34-arm-diagnostics]
   pull_request:
   schedule:
     - cron: "0 6 * * 1"  # weekly Monday 06:00 UTC
